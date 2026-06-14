@@ -7,3 +7,9 @@ add_executable(orderbook
     src/PriceLevel.cpp
     src/OrderBook.cpp
 )
+add_executable(tests 
+tests/test_main.cpp 
+src/PriceLevel.cpp 
+src/OrderBook.cpp
+)
+target_include_directories(tests PRIVATE src third_party)
