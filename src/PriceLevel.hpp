@@ -17,6 +17,10 @@ public:
 
     int total_quantity() const;
 
+    void reduce_front_qty(int quant);
+
+    const Order& get_front() const;
+
 private:
     std::deque<Order> m_orders {};
 

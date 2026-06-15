@@ -31,3 +31,13 @@ int PriceLevel::total_quantity() const {
     }
     return quantity;
 }
+
+void PriceLevel::reduce_front_qty(int quant) {
+    auto& front = m_orders.front();
+    assert(quant > 0 && quant < front.quantity);
+    front.quantity -= quant;
+}
+
+const Order& PriceLevel::get_front() const {
+    return m_orders.front();
+}
