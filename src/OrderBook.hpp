@@ -4,7 +4,9 @@
 #include <optional>
 #include <functional>
 #include <vector>
+#include <unordered_map>
 #include "Trade.hpp"
+#include "OrderLocation.hpp"
 #include "PriceLevel.hpp"
 
 class OrderBook {
@@ -19,10 +21,13 @@ public:
 
     bool crosses(const Order& incoming) const;
 
+    bool cancel(int id);
+
 private:
     std::map<int, PriceLevel, std::greater<int>> bids_ {};
     std::map<int, PriceLevel> asks_ {};
     std::vector<Trade> trades_ {};
+    std::unordered_map<int, OrderLocation> m_index {};
 
     void add_trade(Trade trade);
 
@@ -42,6 +47,7 @@ private:
             add_trade(trade);
 
             if (fill == front_qty) {
+                m_index.erase(resting.id);
                 it->second.pop_front_order();
                 if (it->second.empty()) book.erase(it);
             } else {

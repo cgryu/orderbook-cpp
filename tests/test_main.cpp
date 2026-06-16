@@ -206,3 +206,55 @@ TEST_CASE("SAME-PRICE TRADE") {
     REQUIRE(bid.has_value());
     CHECK(*bid == 100);
 }
+
+TEST_CASE("CANCEL ORDER REMOVES IT FROM THE LIST") {
+    OrderBook book {};
+    Order o1 {1, Side::Buy, 100, 3};
+    
+    book.add_order(o1);
+
+    bool status = book.cancel(1);
+
+    REQUIRE(status == true);
+    CHECK(book.best_bid() == std::nullopt);
+}
+
+TEST_CASE("CANCELING MIDDLE ORDER DOES NOT IMPACT OTHERS") {
+    OrderBook book {};
+    Order o1 {1, Side::Buy, 100, 3};
+    Order o2 {2, Side::Buy, 100, 4};
+    Order o3 {3, Side::Buy, 100, 3};
+
+    book.add_order(o1);
+    book.add_order(o2);
+    book.add_order(o3);
+
+    bool status = book.cancel(2);
+
+    REQUIRE(status == true);
+    CHECK(book.best_bid() == 100);
+}
+
+TEST_CASE("CANCELING AN INVALID ID DOESN'T WORK") {
+    OrderBook book {};
+    Order o1 {1, Side::Sell, 100, 3};
+
+    book.add_order(o1);
+
+    CHECK(book.cancel(o1.id) == true);
+    CHECK(book.cancel(999) == false);
+
+    CHECK(book.best_bid() == std::nullopt);
+}
+
+TEST_CASE("FILLED ORDER IS UNCANCELABLE") {
+    OrderBook book {};
+    Order o1 {1, Side::Sell, 100, 3};
+    Order o2 {2, Side::Buy, 100, 3};
+
+    book.add_order(o1);
+    auto trades = book.add_order(o2);
+
+    CHECK(trades.size() == 1);
+    CHECK(book.cancel(1) == false);
+}

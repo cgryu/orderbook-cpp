@@ -7,14 +7,16 @@ std::vector<Trade> OrderBook::add_order(Order o) {
     std::vector<Trade> localTrades {};
     execute_trade(o, localTrades);
     if (o.quantity > 0) {
+    PriceLevel* level = nullptr;
         if (o.side == Side::Buy) {
-            auto [it, _] = bids_.try_emplace(o.price);
-            it->second.add(o);
+            level = &bids_.try_emplace(o.price).first->second;
         }
         else {
-            auto [it, _] = asks_.try_emplace(o.price);
-            it->second.add(o);
+            level = &asks_.try_emplace(o.price).first->second;
         }
+        auto loc = level->add(o); // identical to me doing (*level).add(o);
+        OrderLocation oL = {o.side, o.price, loc};
+        m_index.emplace(o.id, oL);
     }
     return localTrades;
 }
@@ -65,6 +67,34 @@ bool OrderBook::crosses(const Order& incoming) const {
         auto bid = best_bid();
         return bid.has_value() && incoming.price <= *bid;
     }
+}
+
+bool OrderBook::cancel(int id) {
+    auto it = m_index.find(id);
+    if (it == m_index.end()) {
+        return false;          
+    }
+
+    PriceLevel* level = nullptr;
+    const OrderLocation& loc = it->second;
+
+    if (loc.side == Side::Buy) {
+        level = &bids_.find(loc.price)->second;
+    }
+    else {
+        level = &asks_.find(loc.price)->second;
+    }
+
+    level->erase(loc.handle);
+
+    if (level->empty()) {
+        if (loc.side == Side::Buy) bids_.erase(loc.price);
+        else                       asks_.erase(loc.price);
+    }
+
+    m_index.erase(id);
+    return true;
+    
 }
 
 void OrderBook::execute_trade(Order& incoming, std::vector<Trade>& localTrades) {

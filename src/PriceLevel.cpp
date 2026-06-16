@@ -2,8 +2,8 @@
 #include <iostream>
 #include <cassert>
 
-void PriceLevel::add(const Order& o) {
-    m_orders.push_back(o);
+OrderIt PriceLevel::add(const Order& o) {
+    return m_orders.insert(m_orders.end(), o);
 }
 
 Order PriceLevel::pop_front_order() {
@@ -26,8 +26,8 @@ void PriceLevel::print() const {
 
 int PriceLevel::total_quantity() const {
     int quantity = 0;
-    for (auto it = m_orders.begin(); it != m_orders.end(); ++it) {
-        quantity += it->quantity;
+    for (const Order& o : m_orders) {
+        quantity += o.quantity;
     }
     return quantity;
 }
@@ -40,4 +40,8 @@ void PriceLevel::reduce_front_qty(int quant) {
 
 const Order& PriceLevel::get_front() const {
     return m_orders.front();
+}
+
+void PriceLevel::erase(OrderIt it) {
+    m_orders.erase(it);
 }

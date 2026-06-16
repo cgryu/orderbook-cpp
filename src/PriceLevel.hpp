@@ -2,12 +2,14 @@
 
 #include <deque>
 #include "Order.hpp"
+#include <list>
+using OrderIt = std::list<Order>::iterator;
 
 class PriceLevel {
 public:
     PriceLevel() = default;
 
-    void add(const Order& o);
+    OrderIt add(const Order& o);
 
     Order pop_front_order();
 
@@ -21,7 +23,9 @@ public:
 
     const Order& get_front() const;
 
+    void erase(OrderIt it);
+
 private:
-    std::deque<Order> m_orders {};
+    std::list<Order> m_orders {};
 
 };
