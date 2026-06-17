@@ -258,3 +258,14 @@ TEST_CASE("FILLED ORDER IS UNCANCELABLE") {
     CHECK(trades.size() == 1);
     CHECK(book.cancel(1) == false);
 }
+
+TEST_CASE("duplicate id is rejected") {
+    OrderBook book {};
+
+    book.add_order({1, Side::Buy, 100, 5});
+    auto trades = book.add_order({1, Side::Buy, 100, 99}); 
+    
+    CHECK(trades.empty());               
+    CHECK(book.cancel(1) == true);          
+    CHECK(book.best_bid() == std::nullopt);
+}

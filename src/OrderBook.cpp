@@ -5,23 +5,23 @@
 
 std::vector<Trade> OrderBook::add_order(Order o) {
     std::vector<Trade> localTrades {};
+    if (m_index.count(o.id) > 0) return localTrades;
     execute_trade(o, localTrades);
     if (o.quantity > 0) {
-    PriceLevel* level = nullptr;
+        PriceLevel* level = nullptr;
         if (o.side == Side::Buy) {
             level = &bids_.try_emplace(o.price).first->second;
         }
         else {
             level = &asks_.try_emplace(o.price).first->second;
         }
-        auto loc = level->add(o); // identical to me doing (*level).add(o);
+        auto loc = level->add(o);
         OrderLocation oL = {o.side, o.price, loc};
         m_index.emplace(o.id, oL);
     }
     return localTrades;
 }
 
-// this needs to find the highest ! which means use bids_ REMEMBER TO DEFERENCE THESE IF CALLED
 std::optional<int> OrderBook::best_bid() const {
     if (bids_.empty()) {return std::nullopt;}
     else {
@@ -69,7 +69,7 @@ bool OrderBook::crosses(const Order& incoming) const {
     }
 }
 
-bool OrderBook::cancel(int id) {
+bool OrderBook::cancel(unsigned int id) {
     auto it = m_index.find(id);
     if (it == m_index.end()) {
         return false;          
