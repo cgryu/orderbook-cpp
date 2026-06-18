@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Side.hpp"
+#include <cstdint>
+
+using OrderId = std::uint64_t;
 struct Order {
-    unsigned int id {};
+    OrderId id {};
     Side side {};
     int price {};
     int quantity {};

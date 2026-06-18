@@ -69,7 +69,7 @@ bool OrderBook::crosses(const Order& incoming) const {
     }
 }
 
-bool OrderBook::cancel(unsigned int id) {
+bool OrderBook::cancel(OrderId id) {
     auto it = m_index.find(id);
     if (it == m_index.end()) {
         return false;          
@@ -95,6 +95,31 @@ bool OrderBook::cancel(unsigned int id) {
     m_index.erase(id);
     return true;
     
+}
+
+std::optional<std::vector<Trade>> OrderBook::modify(OrderId id, int new_price, int new_qty) {
+    if (new_price < 0 || new_qty <= 0) return std::nullopt;
+    
+    auto it = m_index.find(id);
+    if (it == m_index.end()) return std::nullopt;
+
+    const OrderLocation& loc = it->second;
+
+    int old_qty = loc.handle->quantity;
+    int old_price = loc.handle->price;
+    Side side = loc.handle->side;
+
+    if (new_qty > old_qty || old_price != new_price) {
+        cancel(id);
+        Order new_order {id, side, new_price, new_qty};
+        return add_order(new_order);
+    }
+    else if (new_qty <= old_qty) {
+        loc.handle->quantity = new_qty;
+        return std::vector<Trade>{};
+    }
+
+    return std::nullopt;
 }
 
 void OrderBook::execute_trade(Order& incoming, std::vector<Trade>& localTrades) {

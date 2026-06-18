@@ -21,13 +21,15 @@ public:
 
     bool crosses(const Order& incoming) const;
 
-    bool cancel(unsigned int id);
+    bool cancel(OrderId id);
+
+    std::optional<std::vector<Trade>> modify(OrderId id, int new_price, int new_qty);
 
 private:
     std::map<int, PriceLevel, std::greater<int>> bids_ {};
     std::map<int, PriceLevel> asks_ {};
     std::vector<Trade> trades_ {};
-    std::unordered_map<unsigned int, OrderLocation> m_index {};
+    std::unordered_map<OrderId, OrderLocation> m_index {};
 
     void add_trade(Trade trade);
 

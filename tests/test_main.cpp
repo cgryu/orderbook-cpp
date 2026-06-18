@@ -269,3 +269,59 @@ TEST_CASE("duplicate id is rejected") {
     CHECK(book.cancel(1) == true);          
     CHECK(book.best_bid() == std::nullopt);
 }
+
+TEST_CASE("LOWER NEW_QTY DOESN'T CHANGE FIFO") {
+    OrderBook book {};
+    Order o1 {1, Side::Buy, 100, 5};
+    Order o2 {2, Side::Buy, 100, 7};
+    Order o3 {3, Side::Sell, 100, 12};
+
+    book.add_order(o1);
+    book.add_order(o2);
+
+    book.modify(1, 100, 3);
+    auto trades = book.add_order(o3);
+
+    CHECK(trades.size() == 2);
+    CHECK(trades[0].quantity == 3);
+    CHECK(trades[1].quantity == 7);
+    CHECK(book.best_ask() == 100);
+}
+
+TEST_CASE("LEVEL TOTAL-QUANTITY REFLECTS THE DECREASE") {
+    OrderBook book {};
+    Order o1 {1, Side::Buy, 100, 5};
+    Order o2 {2, Side::Sell, 105, 5};
+
+    book.add_order(o1);
+    book.add_order(o2);
+
+    auto result = book.modify(1, 105, 5);
+    REQUIRE(result.has_value());
+    CHECK(result->size() == 1);              
+    CHECK((*result)[0].price == 105);
+    CHECK((*result)[0].quantity == 5);
+}
+
+TEST_CASE("MODIFY PRICE INTO A CROSS TRADES AT MAKER PRICE") {
+    OrderBook book {};
+    Order o1 {1, Side::Buy, 100, 10};
+    Order o2 {2, Side::Buy, 100, 25};
+    Order o3 {3, Side::Sell, 100, 25};
+
+    book.add_order(o1);
+    book.add_order(o2);
+
+    book.modify(1, 100, 15);
+    auto trades = book.add_order(o3);
+
+    REQUIRE(trades.size() == 1);
+    CHECK(trades[0].quantity == 25);
+}
+
+TEST_CASE("MODIFY UNKNOWN ID RETURNS NULLOPT") {
+    OrderBook book {};
+    
+    auto result = book.modify(1, 100, 5);
+    CHECK(result == std::nullopt);
+}

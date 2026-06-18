@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Side.hpp"
+#include "Order.hpp"
+
 struct Trade {
-    unsigned int incomingID {};
-    unsigned int restingID {};
+    OrderId incomingID {};
+    OrderId restingID {};
     int price {};
     int quantity {};
     Side aggressor {};

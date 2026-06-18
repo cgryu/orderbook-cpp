@@ -13,3 +13,5 @@ src/PriceLevel.cpp
 src/OrderBook.cpp
 )
 target_include_directories(tests PRIVATE src third_party)
+target_compile_options(orderbook PRIVATE -Wall -Wextra)
+target_compile_options(tests     PRIVATE -Wall -Wextra)
