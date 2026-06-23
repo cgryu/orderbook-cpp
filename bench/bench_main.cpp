@@ -4,7 +4,6 @@
 #include "Harness.hpp"
 #include <iostream>
 #include <chrono>
-#include <algorithm>
 
 static inline void apply_op(OrderBook& book, const Op& op) {
     if (op.type == OpType::Add) {
@@ -12,6 +11,14 @@ static inline void apply_op(OrderBook& book, const Op& op) {
     } else {
         book.cancel(op.id);
     }
+}
+
+const char* to_string(OpType t) {
+    switch(t) {
+        case OpType::Add: return "Add";
+        case OpType::Cancel: return "Cancel";
+    }
+    return "?";
 }
 
 int main() {
@@ -32,9 +39,8 @@ int main() {
         long long ns = time_ns([&] {
             for (std::size_t i = WARMUP; i < N; ++i) apply_op(book, ops[i]);
         });
-        ops_per_sec = N - WARMUP / (ns / 1e9);
+        ops_per_sec = (N - WARMUP) / (ns / 1e9);
     }
-
     {
         // latency pass (latency per op)
         OrderBook book {};
@@ -48,12 +54,24 @@ int main() {
         }
     }
 
+    // op struct vector construction
+    struct opLatency {
+        std::size_t index;
+        long long latency;
+        OpType opType;
+    };
+
+    std::vector<opLatency> worstOps; 
+    for (std::size_t i = 0; i < durations.size(); ++i) {
+        worstOps.push_back({i + WARMUP, durations[i], ops[i + WARMUP].type});
+    }
+
+    std::partial_sort(worstOps.begin(), worstOps.begin() + 20, worstOps.end(),
+    [](const opLatency& a, const opLatency& b) {
+        return a.latency > b.latency; 
+    });
+
     // percentile calculations
-    auto worst = std::max_element(durations.begin(), durations.end());
-    std::size_t worst_idx = worst - durations.begin();   // position in the timed run
-    long long   worst_ns  = *worst;
-    std::cout << "worst op: latency=" << worst_ns
-            << "ns at timed-index " << worst_idx << "\n";
     std::sort(durations.begin(), durations.end());
     long long p99 {percentile(durations, 0.99)};
     long long p95 {percentile(durations, 0.95)};
@@ -67,5 +85,10 @@ int main() {
           << "  p99="      << p99 << "ns"
           << "  max="      << max_ns << "ns"
           << "\n";
+
+    for (std::size_t i = 0; i < 20; i++) {
+        std::cout 
+        << "Rank: " << i << "       " << "Index: " << worstOps[i].index << "     " << "Latency: " << worstOps[i].latency << "        " << "OpType: " << to_string(worstOps[i].opType) << '\n';
+    }
     
 }
