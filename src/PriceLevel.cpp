@@ -2,6 +2,10 @@
 #include <iostream>
 #include <cassert>
 
+int PriceLevel::price() const {
+    return price_;
+}
+
 OrderIt PriceLevel::add(const Order& o) {
     return m_orders.insert(m_orders.end(), o);
 }

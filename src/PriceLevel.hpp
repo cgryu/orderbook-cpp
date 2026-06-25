@@ -8,6 +8,9 @@ using OrderIt = std::list<Order>::iterator;
 class PriceLevel {
 public:
     PriceLevel() = default;
+    explicit PriceLevel(int price) : price_(price) {}
+
+    int price() const;
 
     OrderIt add(const Order& o);
 
@@ -27,5 +30,5 @@ public:
 
 private:
     std::list<Order> m_orders {};
-
+    int price_ {};
 };

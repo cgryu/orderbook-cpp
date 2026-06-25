@@ -18,6 +18,4 @@ int main() {
     sample.add_order(ROKU);
     sample.add_order(TSM);
     sample.add_order(GOOGL);
-    
-    sample.print_book();
 }

@@ -1,21 +1,22 @@
 #include "OrderBook.hpp"
+
+#include "MapBook.hpp"
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <memory>
+
+OrderBook::OrderBook() : levels_(std::make_unique<MapBook>()) {}
+
+OrderBook::~OrderBook() = default;
 
 std::vector<Trade> OrderBook::add_order(Order o) {
     std::vector<Trade> localTrades {};
     if (m_index.count(o.id) > 0) return localTrades;
     execute_trade(o, localTrades);
     if (o.quantity > 0) {
-        PriceLevel* level = nullptr;
-        if (o.side == Side::Buy) {
-            level = &bids_.try_emplace(o.price).first->second;
-        }
-        else {
-            level = &asks_.try_emplace(o.price).first->second;
-        }
-        auto loc = level->add(o);
+        PriceLevel& level = levels_->get_or_create(o.side, o.price);
+        auto loc = level.add(o);
         OrderLocation oL = {o.side, o.price, loc};
         m_index.emplace(o.id, oL);
     }
@@ -23,39 +24,15 @@ std::vector<Trade> OrderBook::add_order(Order o) {
 }
 
 std::optional<int> OrderBook::best_bid() const {
-    if (bids_.empty()) {return std::nullopt;}
-    else {
-        auto it = bids_.begin();
-        return std::optional{it->first};
-    }
+    PriceLevel* level = levels_->best(Side::Buy);
+    if (!level) return std::nullopt;
+    return level->price();
 }
 
 std::optional<int> OrderBook::best_ask() const {
-    if (asks_.empty()) {return std::nullopt;}
-    else {
-        auto it = asks_.begin();
-        return std::optional{it->first};
-    }
-}
-
-void OrderBook::print_book() const {
-    std::cout << "--- ORDER BOOK ---\n";
-    std::cout << "ASKS\n";
-    for (auto it = asks_.rbegin(); it != asks_.rend(); ++it) {
-        int price = it->first;
-        int quantity {it->second.total_quantity()};
-        
-        std::cout << std::setw(4) << price << " | " << quantity << '\n';
-    }
-
-    std::cout << "------------------\n";
-    std::cout << "BIDS\n";
-    for (auto it = bids_.begin(); it != bids_.end(); ++it) {
-        int price = it->first;
-        int quantity {it->second.total_quantity()};
-
-        std::cout << std::setw(4) << price << " | " << quantity << '\n';
-    }
+    PriceLevel* level = levels_->best(Side::Sell);
+    if (!level) return std::nullopt;
+    return level->price();
 }
 
 bool OrderBook::crosses(const Order& incoming) const {
@@ -75,21 +52,13 @@ bool OrderBook::cancel(OrderId id) {
         return false;          
     }
 
-    PriceLevel* level = nullptr;
     const OrderLocation& loc = it->second;
+    PriceLevel& level = levels_->get_or_create(loc.side, loc.price);
 
-    if (loc.side == Side::Buy) {
-        level = &bids_.find(loc.price)->second;
-    }
-    else {
-        level = &asks_.find(loc.price)->second;
-    }
+    level.erase(loc.handle);
 
-    level->erase(loc.handle);
-
-    if (level->empty()) {
-        if (loc.side == Side::Buy) bids_.erase(loc.price);
-        else                       asks_.erase(loc.price);
+    if (level.empty()) {
+        levels_->erase(loc.side, loc.price);
     }
 
     m_index.erase(id);
@@ -122,11 +91,35 @@ std::optional<std::vector<Trade>> OrderBook::modify(OrderId id, int new_price, i
     return std::nullopt;
 }
 
+void OrderBook::match_against(Side resting_side, Order& incoming, std::vector<Trade>& localTrades) {
+        while (incoming.quantity > 0 && crosses(incoming)) {
+            PriceLevel* level = levels_->best(resting_side);
+
+            const Order& resting = level->get_front();
+            int front_qty = resting.quantity;
+            int fill = std::min(incoming.quantity, front_qty);
+            incoming.quantity -= fill;
+
+            Trade trade {incoming.id, resting.id, resting.price, fill, incoming.side};
+            localTrades.push_back(trade);
+            add_trade(trade);
+
+            if (fill == front_qty) {
+                m_index.erase(resting.id);
+                level->pop_front_order();
+                if (level->empty())
+                    levels_->erase(resting_side, level->price());
+            } else {
+                level->reduce_front_qty(fill);
+            }
+        }
+    }
+
 void OrderBook::execute_trade(Order& incoming, std::vector<Trade>& localTrades) {
     if (incoming.side == Side::Buy)
-        match_against(asks_, incoming, localTrades);
+        match_against(Side::Sell, incoming, localTrades);
     else
-        match_against(bids_, incoming, localTrades);
+        match_against(Side::Buy, incoming, localTrades);
 }
 
 void OrderBook::add_trade(Trade trade) {
