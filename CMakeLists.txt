@@ -10,6 +10,7 @@ add_library(orderbook_lib
     src/PriceLevel.cpp
     src/OrderBook.cpp
     src/MapBook.cpp
+    src/FlatBook.cpp
 )
 target_include_directories(orderbook_lib PUBLIC src)
 

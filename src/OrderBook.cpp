@@ -1,11 +1,13 @@
 #include "OrderBook.hpp"
 
 #include "MapBook.hpp"
+#include "FlatBook.hpp"
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <memory>
 
+// swap between MapBook and FlatBook with <MapBook>() and <FlatBook>(bound)
 OrderBook::OrderBook() : levels_(std::make_unique<MapBook>()) {}
 
 OrderBook::~OrderBook() = default;

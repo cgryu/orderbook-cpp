@@ -1,5 +1,6 @@
 #pragma once
 #include "LevelBook.hpp"
+#include "PriceLevel.hpp"
 #include <map>
 #include <functional>
 
