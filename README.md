@@ -1,5 +1,5 @@
 # orderbook-cpp
-Limit order book and matching engine in C++20 with benchmarks. Has Price-Time Priority (FIFO), and supports adding, canceling and modifying orders. Price-level structure is toggleable between MapBook (map) and FlatBook (flat array) implentation - see OrderBook.cpp line 11. 
+Limit order book and matching engine in C++20 with benchmarks. Has Price-Time Priority (FIFO), and supports adding, canceling and modifying orders. Price-level structure is toggleable between MapBook (map) and FlatBook (flat array) implementation.
 
 ## Build and Run
 Requires a C++20 compiler (g++ or clang) and CMake 3.16+. 
@@ -22,7 +22,7 @@ cmake --build build -j
 - Any RNG is seeded for consistency. This means that any generated workloads and their respective order streams and order operations will be identical across runs, regardless of FlatBook or MapBook usage.
 - 10% of the workload is designated as untimed warmup to avoid cold cache allocation impacting measurement. Books are regenerated per pass so that no run is impacted by a previous run. The benchmark thread is core-pinned to avoid OS migration mid-run which may impact cache reloading and scheduler timing. 
 - Latency is reported as percentile to the nearest rank at the 50th, 95th and 99th percentile. This is done to characterize the entire distribution, rather than a simple average.
-- In order to avoid false conclusions from singular noisy runs, both books were run as identical core-pinned conditions, and median and range of 5 matched was calculated from each side and compared. 
+- To avoid false conclusions from single noisy runs, each book was run 5 times under identical core-pinned conditions; the median and range were compared across the two sets. 
 
 ## Results
 - FlatBook: Median 9.54M ops/sec, range 9.13-9.95M ops/sec
