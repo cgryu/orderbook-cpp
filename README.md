@@ -11,7 +11,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/tests
 ./build/bench
-​```
+```
 
 ## Design Decisions
 - MapBook (map) and FlatBook (flat-array vectors) are implemented from the LevelBook Interface. The order processing and matching logic references only the LevelBook interface. The concrete implementation is selected at construction. Currently it is set to MapBook, swap to FlatBook by changing the one line and rebuilding.
